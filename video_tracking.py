@@ -127,7 +127,7 @@ class LDKF:
     def backPass(P_old,F,x_old):
         x_new = np.zeros(np.shape(x_old));
         P_new = np.zeros(np.shape(P_old));
-        t = np.size(x_estimate,1);
+        t = np.size(x_old,1);
         
         for i in range(t,0,-1):
             L = P_old[i].dot(F.T).dot(np.linalg.inv(P_old[i-1]))

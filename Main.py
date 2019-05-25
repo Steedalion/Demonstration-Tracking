@@ -70,7 +70,7 @@ while (i<len(buf)):
     cv2.imshow('edited', hsv)
     cv2.namedWindow('mask')
     cv2.imshow('mask', mask)
-    keyPressed = cv2.waitKey(200)
+    #keyPressed = cv2.waitKey(200)
     if (keyPressed == ord('q')):
         break;
     if (keyPressed == ord('p')):
@@ -114,9 +114,7 @@ for i in range(1,tmax):
     #z[:,i] = H.dot(x_true[:,i]) +np.random.normal(0,np.sqrt(R))
     
     #time update
-    x_priori = np.dot(F,x_estimate[:,i-1]);
-    pk = F.dot(pk).dot(F.T) + Gamma.dot(Q).dot(Gamma.T)
-    K = pk.dot(H.T).dot(np.linalg.inv(H.dot(pk).dot(H.T) + R))
+    [x_priori,pk,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk)
     #K = pk.dot(H.T)/((H.dot(pk).dot(H.T) + R))
     #measurement update
     [pk,x_estimate[:,i]] = kf.measurementUpdate(pk,K,x_priori,H,z[:,i])

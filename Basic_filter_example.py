@@ -55,6 +55,9 @@ for i in range(1,tmax):
     P_negative[i] = F.dot(P_positive[i-1]).dot(F.T) + Gamma.dot(Q).dot(Gamma.T)
         
     K = P_negative[i].dot(H.T).dot(np.linalg.inv(H.dot(P_negative[i]).dot(H.T) + R))
+    [x_priori[:,i], P_negative[i], K] = kf.timeUpdate(
+            F, H, R, Q, Gamma, x_estimate[:,i-1], P_positive[i-1])
+    
     #K = P_positive.dot(H.T)/((H.dot(P_positive).dot(H.T) + R))
     P_positive[i] = (np.eye(np.size(P_negative[i],0)) - K.dot(H))*(P_negative[i])
     x_estimate[:,i] = x_priori[:,i] + K.dot(z[:,i] - H.dot(x_priori[:,i]))

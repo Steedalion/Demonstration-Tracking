@@ -85,19 +85,6 @@ import numpy as np;
 import matplotlib.pyplot as plot;
 import kalman as kf; 
     
-def backPass(F, P_neg, P_pos, x_neg, x_pos):
-    
-    x_new = np.zeros(np.shape(x_pos));
-    x_new[:,-1] = x_pos[:,-1]
-    P_new = np.zeros(np.shape(P_neg));
-    P_new[-1] = P_pos[-1]
-    t = np.size(x_pos,1);
-    
-    for i in range(t-1,0,-1):
-        L = P_pos[i-1].dot(F.T).dot(np.linalg.inv(P_neg[i]));
-        x_new[:,i-1] = x_pos[:,i-1] + L.dot(x_new[:,i]-x_neg[:,i]);
-        P_new[i-1] = P_pos[i-1] + L.dot(P_new[i]-P_neg[i]).dot(L.T);
-    return (P_new,x_new);
 
 T = 1/30;   
 F = np.array([[1, T],[0, 1]]);np.zeros(np.shape(F));
@@ -114,6 +101,7 @@ H = np.array([[1,0,0,0],[0,0,1,0]]);
 z = np.array(points).T
 tmax = len(z[1]);
 x_true = np.zeros([4,tmax]);
+nx = np.size(x_true,0);
 x_estimate = np.zeros(np.shape(x_true));   
 x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])   
 pk = np.eye(np.size(x_true,0));

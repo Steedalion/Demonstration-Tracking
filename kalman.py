@@ -13,6 +13,12 @@ def measurementUpdate(P_pred,K,x_prior,H,z):
         x_estimate = x_prior + K.dot(z - H.dot(x_prior))
         return (Pp, x_estimate)
 
+def timeUpdate(F,H,R,Q,Gamma,x_filter_prev,P_filter_prev):
+    x_predicted = np.dot(F,x_filter_prev);
+    P_predicted = F.dot(P_filter_prev).dot(F.T) + Gamma.dot(Q).dot(Gamma.T)
+    Kalman_gain = P_predicted.dot(H.T).dot(np.linalg.inv(H.dot(P_predicted).dot(H.T) + R))
+    return(x_predicted,P_predicted,Kalman_gain)
+
 def backPass(F, Gamma, Q, P_filt, x_filt):
     x_smooth = np.zeros(np.shape(x_filt));
     P_smooth = np.zeros(np.shape(P_filt));

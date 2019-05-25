@@ -133,6 +133,8 @@ for i in range(1,tmax):
     #measurement update
     [pk,x_estimate[:,i]] = kf.measurementUpdate(pk,K,x_priori,H,z[:,i])
     
+
+    
 #[P_backpass,x_backpass] = backPass(F,P_negative,P_positive,x_priori,x_estimate)
 plot.figure(1)
 plot.subplot(1,2,1)
@@ -145,5 +147,6 @@ plot.subplot(1,2,2)
 plot.title("Velocity")
 plot.plot(t,x_estimate[1,:],'b',
           t,x_estimate[3,:],'r')
+plot.legend(["v_x",'v_y'])
     
 

@@ -104,7 +104,8 @@ x_true = np.zeros([4,tmax]);
 nx = np.size(x_true,0);
 x_estimate = np.zeros(np.shape(x_true));   
 x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])   
-pk = np.eye(np.size(x_true,0));
+pk = np.zeros((tmax,nx,nx));
+pk[0] = np.eye(np.size(x_true,0));
 R = 0.002;
 Q = np.eye(2)*0.000001;    
 t = np.linspace(0,tmax*T,tmax)
@@ -114,10 +115,10 @@ for i in range(1,tmax):
     #z[:,i] = H.dot(x_true[:,i]) +np.random.normal(0,np.sqrt(R))
     
     #time update
-    [x_priori,pk,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk)
+    [x_priori,P_pred,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])
     #K = pk.dot(H.T)/((H.dot(pk).dot(H.T) + R))
     #measurement update
-    [pk,x_estimate[:,i]] = kf.measurementUpdate(pk,K,x_priori,H,z[:,i])
+    [pk[i],x_estimate[:,i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
     
 
     

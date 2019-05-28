@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 from collections import deque
 
+
 greenLower = (6, 120, 100)
 greenUpper =  (64, 255, 255)
 
@@ -63,14 +64,15 @@ while (i<len(buf)):
     #Draw trail line    
     for j in range(1,len(points)):
         cv2.line(currentFrame,points[j - 1], points[j], (0,0,255), 3)
-        
+    if (0 == i%10):
+        cv2.imwrite('./gif/'+'pic'+str(i)+'.png',currentFrame)
     cv2.namedWindow('frame 10');
     cv2.imshow('frame 10', currentFrame);
     cv2.namedWindow('edited')
     cv2.imshow('edited', hsv)
     cv2.namedWindow('mask')
     cv2.imshow('mask', mask)
-    #keyPressed = cv2.waitKey(200)
+    keyPressed = cv2.waitKey(200)
     if (keyPressed == ord('q')):
         break;
     if (keyPressed == ord('p')):
@@ -107,13 +109,10 @@ x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])
 pk = np.zeros((tmax,nx,nx));
 pk[0] = np.eye(np.size(x_true,0));
 R = 0.002;
-Q = np.eye(2)*0.000001;    
+Q = np.eye(2)*0.0001;    
 t = np.linspace(0,tmax*T,tmax)
 
-for i in range(1,tmax):
-    x_true[:,i] = F.dot(x_true[:,i-1]) +Gamma.dot(np.random.normal(0,np.sqrt(Q)).dot(np.ones([2,1]))).T    
-    #z[:,i] = H.dot(x_true[:,i]) +np.random.normal(0,np.sqrt(R))
-    
+for i in range(1,tmax):   
     #time update
     [x_priori,P_pred,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])
     #K = pk.dot(H.T)/((H.dot(pk).dot(H.T) + R))
@@ -122,7 +121,8 @@ for i in range(1,tmax):
     
 
     
-#[P_backpass,x_backpass] = backPass(F,P_negative,P_positive,x_priori,x_estimate)
+[P_backpass,x_backpass] = kf.backPass(F,Gamma,Q,pk,x_filt=x_estimate)
+
 plot.figure(1)
 plot.subplot(1,2,1)
 plot.title("Position")
@@ -135,5 +135,29 @@ plot.title("Velocity")
 plot.plot(t,x_estimate[1,:],'b',
           t,x_estimate[3,:],'r')
 plot.legend(["v_x",'v_y'])
-    
 
+plot.figure(2)
+plot.subplot(1,2,1)
+plot.title("Position")
+plot.plot(z[0,:],z[1,:],'r.'
+          ,x_backpass[0,:],x_backpass[2,:],'b')
+plot.legend(["measurements",'position estimate'])
+
+plot.subplot(1,2,2)
+plot.title("Velocity")
+plot.plot(t,x_backpass[1,:],'b',
+          t,x_backpass[3,:],'r')
+plot.legend(["v_x",'v_y'])
+    
+points_kf = tuple(map(tuple,np.vstack([x_estimate[0].T,x_estimate[2]]).T.astype(int)))
+points_bp = tuple(map(tuple,np.vstack([x_backpass[0].T,x_backpass[2]]).T.astype(int)))
+
+
+for j in range(1,len(points)):
+        cv2.line(currentFrame,points_kf[j - 1], points_kf[j], (0,255,0), 2)
+        cv2.line(currentFrame,points_bp[j - 1], points_kf[j], (255,0,0), 1)
+cv2.namedWindow('frame 10');
+cv2.imshow('frame 10', currentFrame);
+cv2.imwrite('ball tracking.png',currentFrame)
+keyPressed = cv2.waitKey(3000)
+cv2.destroyAllWindows()

@@ -33,7 +33,7 @@ Pp = np.block([              # guess of initial error covariance
 sigma_Pp = np.zeros([t_final,n_dimentions,n_dimentions])
 sigma_Pp[1] = np.sqrt(np.diag(Pp));
 ## Noise
-sigma_w = 2;        # system noise (std of acceleration) 
+sigma_w = 1;        # system noise (std of acceleration) 
 sigma_v = 30;       # measurement noise (std of position sensor)
 Q = np.power(sigma_w,2);      # system noise covariance matrix
 R = np.power(sigma_v,2);      # measurement noise covariance matrix
@@ -64,6 +64,8 @@ for i in range(0,t_final-1,T):
     #[Pp, xp[:,i+1]] = kf.measurementUpdate(Pp,K,x_,H,y[i])
     Pp = np.dot((np.eye(2)- K.dot(H)), (P_))
     xp[:,i+1] = x_ + K.dot(y[i] - H.dot(x_))
+    
+    
 #    
     ## Equation 3: Innovation Covariance
     #S = H*P_*H'+R; 

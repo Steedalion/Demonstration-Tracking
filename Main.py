@@ -109,8 +109,10 @@ x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])
 pk = np.zeros((tmax,nx,nx));
 pk[0] = np.eye(np.size(x_true,0));
 R = 0.002;
-Q = np.eye(2)*0.0001;    
-t = np.linspace(0,tmax*T,tmax)
+sigmav =np.diag([1,1])*30;
+sigmaW =np.diag([1,1])*1;
+R = sigmav**2;
+Q = sigmaW**2;
 
 for i in range(1,tmax):   
     #time update

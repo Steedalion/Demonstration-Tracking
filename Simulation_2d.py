@@ -53,19 +53,21 @@ for i in range(1,tmax):
     z[:,i] = H.dot(x_true[:,i]) + np.random.normal(0,1,2).dot(sigmav)
     
     #time update
-    x_priori[:,i] = np.dot(F,x_estimate[:,i-1]);
-    P_negative[i] = F.dot(P_positive[i-1]).dot(F.T) + Gamma.dot(sigmaW).dot(Gamma.T)
+   # x_priori[:,i] = np.dot(F,x_estimate[:,i-1]);
+    #P_negative[i] = F.dot(P_positive[i-1]).dot(F.T) + Gamma.dot(sigmaW).dot(Gamma.T)
         
     K = P_negative[i].dot(H.T).dot(np.linalg.inv(H.dot(P_negative[i]).dot(H.T) + R))
     [x_priori[:,i], P_negative[i], K] = kf.timeUpdate(
             F, H, R, Q, Gamma, x_estimate[:,i-1], P_positive[i-1])
     
     #K = P_positive.dot(H.T)/((H.dot(P_positive).dot(H.T) + R))
-    P_positive[i] = (np.eye(np.size(K.dot(H),0)) - K.dot(H)).dot(P_negative[i])
-    x_estimate[:,i] = x_priori[:,i] + K.dot(z[:,i] - H.dot(x_priori[:,i]))
-    x_smooth[:,i-1] = x_estimate[:,i-1]
-    K_smooth =  P_positive[i-1].dot(F.T).dot(np.linalg.pinv(P_negative[i]));
-    x_smooth [:,i-1] = x_estimate[:,i-1] + K_smooth.dot(x_smooth[:,i] -x_priori[:,i])
+    #P_positive[i] = (np.eye(np.size(K.dot(H),0)) - K.dot(H)).dot(P_negative[i])
+    #x_estimate[:,i] = x_priori[:,i] + K.dot(z[:,i] - H.dot(x_priori[:,i]))
+    [P_positive[i], x_estimate[:,i]] = kf.measurementUpdate(P_negative[i], K, x_priori[:,i],H,z[:,i])
+    
+#    x_smooth[:,i-1] = x_estimate[:,i-1]
+#    K_smooth =  P_positive[i-1].dot(F.T).dot(np.linalg.pinv(P_negative[i]));
+#    x_smooth [:,i-1] = x_estimate[:,i-1] + K_smooth.dot(x_smooth[:,i] -x_priori[:,i])
 
 #x_smooth[:,49] = x_estimate[:,49]
 #x_estimate[:,-1] = x_true[:,-1]
@@ -85,11 +87,12 @@ plot.figure(1)
 plot.subplot(1,2,1)
 plot.title("Position")
 plot.plot(z[0,:],z[1,:],'r.'
+          ,x_true[0,:],x_true[2,:],'k.'
           ,x_estimate[0,:],x_estimate[2,:],'b')
 plot.subplot(1,2,2)
 plot.title("Velocity")
 plot.plot(t,x_true[3,:],'r',t,x_estimate[3,:],'b')
-plot.legend(["measurements",'estimate'])
+plot.legend(["measurements",'true position','estimate'])
 
 plot.figure(2)
 plot.subplot(1,2,1)

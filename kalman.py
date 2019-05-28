@@ -12,7 +12,7 @@ def measurementUpdate(P_pred,K,x_prior,H,z):
     if(np.size(K.dot(H)) == 1):
         Pp = (np.array(1) - K.dot(H)).dot(P_pred)
     else:
-        Pp = (np.eye(np.shape(K.dot(H))) - K.dot(H)).dot(P_pred)
+        Pp = (np.eye(np.size(K.dot(H),0)) - K.dot(H)).dot(P_pred)
     x_estimate = x_prior + K.dot(z - H.dot(x_prior))
     return (Pp, x_estimate)
 

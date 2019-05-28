@@ -72,7 +72,7 @@ while (i<len(buf)):
     cv2.imshow('edited', hsv)
     cv2.namedWindow('mask')
     cv2.imshow('mask', mask)
-    keyPressed = cv2.waitKey(200)
+    keyPressed = cv2.waitKey(20)
     if (keyPressed == ord('q')):
         break;
     if (keyPressed == ord('p')):
@@ -109,11 +109,11 @@ x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])
 pk = np.zeros((tmax,nx,nx));
 pk[0] = np.eye(np.size(x_true,0));
 R = 0.002;
-sigmav =np.diag([1,1])*30;
-sigmaW =np.diag([1,1])*1;
+sigmav =np.diag([1,1])*0.0000001;
+sigmaW =np.diag([1,1])*0.0001;
 R = sigmav**2;
 Q = sigmaW**2;
-
+t = np.linspace(0,tmax*T,tmax)
 for i in range(1,tmax):   
     #time update
     [x_priori,P_pred,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])

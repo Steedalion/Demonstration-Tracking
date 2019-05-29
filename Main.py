@@ -72,7 +72,7 @@ while (i<len(buf)):
     cv2.imshow('edited', hsv)
     cv2.namedWindow('mask')
     cv2.imshow('mask', mask)
-    keyPressed = cv2.waitKey(20)
+    keyPressed = cv2.waitKey(200)
     if (keyPressed == ord('q')):
         break;
     if (keyPressed == ord('p')):
@@ -109,8 +109,8 @@ x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])
 pk = np.zeros((tmax,nx,nx));
 pk[0] = np.eye(np.size(x_true,0));
 R = 0.002;
-sigmav =np.diag([1,1])*0.0000001;
-sigmaW =np.diag([1,1])*0.0001;
+sigmav =np.diag([1,1])*0.01;
+sigmaW =np.diag([1,1])*10;
 R = sigmav**2;
 Q = sigmaW**2;
 t = np.linspace(0,tmax*T,tmax)
@@ -130,6 +130,7 @@ plot.subplot(1,2,1)
 plot.title("Position")
 plot.plot(z[0,:],z[1,:],'r.'
           ,x_estimate[0,:],x_estimate[2,:],'b')
+plot.axis([0,300,0,200])
 plot.legend(["measurements",'position estimate'])
 
 plot.subplot(1,2,2)

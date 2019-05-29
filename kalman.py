@@ -68,7 +68,7 @@ def backPass(F, Gamma, Q, P_filt, x_filt):
 #                 ))
 #    )
         
-        [x_smooth[:,i-1],P_smooth[i-1],v] = pkal.standard._smooth_update(F, x_filt[:,i-1], P_filt[i-1], x_pred, P_pred, x_smooth[:,i], P_smooth[i])
+        #[x_smooth[:,i-1],P_smooth[i-1],v] = pkal.standard._smooth_update(F, x_filt[:,i-1], P_filt[i-1], x_pred, P_pred, x_smooth[:,i], P_smooth[i])
     return (P_smooth,x_smooth);
 def backpassLib(F, x_filt, P_filt, x_pred, P_pred):
     t = np.size(x_filt,1);

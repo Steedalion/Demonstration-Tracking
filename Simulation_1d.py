@@ -47,11 +47,7 @@ for i in range(0,t_final-1,T):
     ## ====================================================
     ## Time update
     ## ====================================================
-    #[x_, P_, K] =kf.timeUpdate(F,H,R,Q,Gamma,xp[:,i],Pp);
-    P_ = F.dot(Pp).dot(F.T) + Q
-    x_ = F.dot(xp[:,i])
-    K = P_.dot(H.T).dot(1/(H.dot(P_).dot(H.T) + R))
-    
+    [x_, P_, K] =kf.timeUpdate(F,H,R,Q,Gamma,xp[:,i],Pp);   
     ## Equation 1: Prediction of state
     #x_ = 
     ## Equation 2: Prediction of covariance
@@ -61,12 +57,10 @@ for i in range(0,t_final-1,T):
     ## ====================================================
     ## measurement generation
     y[i] = x[0,i+1] + np.random.normal(0,sigma_v);
-    #[Pp, xp[:,i+1]] = kf.measurementUpdate(Pp,K,x_,H,y[i])
-    Pp = np.dot((np.eye(2)- K.dot(H)), (P_))
+    [xp[:,i+1], Pp] = kf.measurementUpdate(P_,K,x_,H,y[i])
+    Pp = np.dot((np.eye(np.size(K.dot(H),0))- K.dot(H)), (P_))
     xp[:,i+1] = x_ + K.dot(y[i] - H.dot(x_))
-    
-    
-#    
+  
     ## Equation 3: Innovation Covariance
     #S = H*P_*H'+R; 
     ## Equation 4:  Residual

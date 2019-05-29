@@ -116,14 +116,14 @@ Q = sigmaW**2;
 t = np.linspace(0,tmax*T,tmax)
 for i in range(1,tmax):   
     #time update
-    [x_priori,P_pred,K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])
+    [x_priori, P_pred, K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])
     #K = pk.dot(H.T)/((H.dot(pk).dot(H.T) + R))
     #measurement update
-    [pk[i],x_estimate[:,i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
+    [x_estimate[:,i], pk[i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
     
 
     
-[P_backpass,x_backpass] = kf.backPass(F,Gamma,Q,pk,x_filt=x_estimate)
+[x_backpass, P_backpass] = kf.backPass(F,Gamma,Q,pk,x_filt=x_estimate)
 
 plot.figure(1)
 plot.subplot(1,2,1)

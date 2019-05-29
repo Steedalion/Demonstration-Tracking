@@ -63,7 +63,7 @@ for i in range(1,tmax):
     #K = P_positive.dot(H.T)/((H.dot(P_positive).dot(H.T) + R))
     #P_positive[i] = (np.eye(np.size(K.dot(H),0)) - K.dot(H)).dot(P_negative[i])
     #x_estimate[:,i] = x_priori[:,i] + K.dot(z[:,i] - H.dot(x_priori[:,i]))
-    [P_positive[i], x_estimate[:,i]] = kf.measurementUpdate(P_negative[i], K, x_priori[:,i],H,z[:,i])
+    [x_estimate[:,i], P_positive[i]] = kf.measurementUpdate(P_negative[i], K, x_priori[:,i],H,z[:,i])
     
 #    x_smooth[:,i-1] = x_estimate[:,i-1]
 #    K_smooth =  P_positive[i-1].dot(F.T).dot(np.linalg.pinv(P_negative[i]));
@@ -71,7 +71,8 @@ for i in range(1,tmax):
 
 #x_smooth[:,49] = x_estimate[:,49]
 #x_estimate[:,-1] = x_true[:,-1]
-[P_backpass,x_backpass] = kf.backpassLib(F, x_estimate, P_filt=P_positive, x_pred=x_priori, P_pred=P_negative)
+
+[x_backpass, P_backpass] = kf.backPass(F, Gamma, Q, P_positive, x_estimate)
 
 #[x_s,P_s,z] = pkal.standard._smooth(F, x_estimate.T,P_positive, x_priori.T,P_negative)
 

@@ -34,7 +34,7 @@ Pp = np.block([              # guess of initial error covariance
 sigma_Pp = np.zeros([t_final,n_dimentions,n_dimentions])
 sigma_Pp[1] = np.sqrt(np.diag(Pp));
 ## Noise
-sigma_w = np.array([1]);        # system noise (std of acceleration) 
+sigma_w = np.array([2]);        # system noise (std of acceleration) 
 sigma_v = 30;       # measurement noise (std of position sensor)
 Q = np.diag(np.power(sigma_w,2));      # system noise covariance matrix
 R = np.power(sigma_v,2);      # measurement noise covariance matrix

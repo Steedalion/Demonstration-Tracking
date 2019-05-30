@@ -18,7 +18,7 @@ F = np.block([
         [np.zeros(np.shape(F)),F]
         ]);
 
-Gamma = np.array([pow(T,2)/2,T]);
+Gamma = np.array([[pow(T,2)/2],[T]]);
 Gamma = np.block([
         [Gamma, np.zeros(np.shape(Gamma))],
         [np.zeros(np.shape(Gamma)),Gamma]
@@ -42,14 +42,14 @@ x_estimate[:,0] = np.array(x_true[:,0]-1)
 P_positive[0] = np.eye(nx)*1000;
 P_negative[0] = np.eye(nx)*1;
 sigmav =np.diag([1,1])*30;
-sigmaW =np.diag([1,1,1,1])*1;
+sigmaW =np.array([1,1])*1;
 R = sigmav**2;
-Q = sigmaW**2;
+Q = np.diag(sigmaW**2);
 
 t = np.linspace(0,tmax*T,tmax)
 constantVelocityModel = pkal.KalmanFilter(transition_matrices= F,
                                           observation_matrices= H,
-                                          transition_covariance= Q,
+                                          transition_covariance= Gamma.dot(Q).dot(Gamma.T),
                                           observation_covariance=R,
                                           initial_state_mean= x_estimate[:,0],
                                           initial_state_covariance= P_positive[0])
@@ -66,7 +66,8 @@ for i in range(1,tmax):
 
 [x_backpass, P_backpass] = kf.backPass(F, Gamma, Q, P_positive, x_estimate)
 
-[x_filtered_pkal, P_filtered_pkal] = constantVelocityModel.filter(z)
+[x_filtered_pkal, P_filtered_pkal] = constantVelocityModel.filter(z.T)
+[x_smoothed_pkal, P_smoothed_pkal] = constantVelocityModel.smooth(z.T)
     
 plot.figure(1)
 plot.subplot(1,2,1)
@@ -77,7 +78,7 @@ plot.plot(z[0,:],z[1,:],'r.'
 plot.subplot(1,2,2)
 plot.title("Velocity")
 plot.plot(t,x_true[3,:],'r',t,x_estimate[3,:],'b')
-plot.legend(["measurements",'true position','estimate'])
+plot.legend(["measurements",'filter'])
 
 plot.figure(2)
 plot.subplot(1,2,1)
@@ -90,7 +91,21 @@ plot.title("Velocity")
 plot.plot(t,x_true[3,:],'r',t,x_backpass[3,:],'b')
 plot.legend(["true",'smoothed'])
 
-
+plot.figure(3)
+plot.subplot(1,2,1)
+plot.title("Position, Pykalman")
+plot.plot(z[0,:],z[1,:],'r.',
+          x_filtered_pkal[:,0], x_filtered_pkal[:,2], 'b',
+          x_smoothed_pkal[:,0], x_smoothed_pkal[:,2], 'k',
+          )
+plot.legend(["measurments",'filtered','smoothed'])
+plot.subplot(1,2,2)
+plot.title("Velocity, PyKalman")
+plot.plot(t,x_true[3,:],'r',
+          t,x_filtered_pkal[:,3].T,'b',
+          t,x_smoothed_pkal[:,3].T,'k',
+          )
+plot.legend(["true",'filtered','smoothed'])
 
 #random_state = np.random.RandomState(0)
 #transition_matrix = F #F

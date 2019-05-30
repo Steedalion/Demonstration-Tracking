@@ -18,7 +18,7 @@ F = np.block([
         [np.zeros(np.shape(F)),F]
         ]);
 
-Gamma = np.array([[pow(T,2)/2],[T]]);
+Gamma = np.array([pow(T,2)/2,T]);
 Gamma = np.block([
         [Gamma, np.zeros(np.shape(Gamma))],
         [np.zeros(np.shape(Gamma)),Gamma]
@@ -42,47 +42,31 @@ x_estimate[:,0] = np.array(x_true[:,0]-1)
 P_positive[0] = np.eye(nx)*1000;
 P_negative[0] = np.eye(nx)*1;
 sigmav =np.diag([1,1])*30;
-sigmaW =np.diag([1,1])*1;
+sigmaW =np.diag([1,1,1,1])*1;
 R = sigmav**2;
 Q = sigmaW**2;
 
 t = np.linspace(0,tmax*T,tmax)
+constantVelocityModel = pkal.KalmanFilter(transition_matrices= F,
+                                          observation_matrices= H,
+                                          transition_covariance= Q,
+                                          observation_covariance=R,
+                                          initial_state_mean= x_estimate[:,0],
+                                          initial_state_covariance= P_positive[0])
 
 for i in range(1,tmax):
-    x_true[:,i] = F.dot(x_true[:,i-1]) +Gamma.dot(np.random.normal(0,np.sqrt(Q)).dot(np.ones([2,1]))).T    
-    z[:,i] = H.dot(x_true[:,i]) + np.random.normal(0,1,2).dot(sigmav)
-    
-    #time update
-   # x_priori[:,i] = np.dot(F,x_estimate[:,i-1]);
-    #P_negative[i] = F.dot(P_positive[i-1]).dot(F.T) + Gamma.dot(sigmaW).dot(Gamma.T)
-        
+    x_true[:,i] = F.dot(x_true[:,i-1]) +Gamma.dot(np.random.normal(0,sigmaW))
+    z[:,i] = H.dot(x_true[:,i]) + np.random.normal(0,1,2).dot(sigmav)       
     K = P_negative[i].dot(H.T).dot(np.linalg.inv(H.dot(P_negative[i]).dot(H.T) + R))
+    
     [x_priori[:,i], P_negative[i], K] = kf.timeUpdate(
             F, H, R, Q, Gamma, x_estimate[:,i-1], P_positive[i-1])
     
-    #K = P_positive.dot(H.T)/((H.dot(P_positive).dot(H.T) + R))
-    #P_positive[i] = (np.eye(np.size(K.dot(H),0)) - K.dot(H)).dot(P_negative[i])
-    #x_estimate[:,i] = x_priori[:,i] + K.dot(z[:,i] - H.dot(x_priori[:,i]))
     [x_estimate[:,i], P_positive[i]] = kf.measurementUpdate(P_negative[i], K, x_priori[:,i],H,z[:,i])
-    
-#    x_smooth[:,i-1] = x_estimate[:,i-1]
-#    K_smooth =  P_positive[i-1].dot(F.T).dot(np.linalg.pinv(P_negative[i]));
-#    x_smooth [:,i-1] = x_estimate[:,i-1] + K_smooth.dot(x_smooth[:,i] -x_priori[:,i])
-
-#x_smooth[:,49] = x_estimate[:,49]
-#x_estimate[:,-1] = x_true[:,-1]
 
 [x_backpass, P_backpass] = kf.backPass(F, Gamma, Q, P_positive, x_estimate)
 
-#[x_s,P_s,z] = pkal.standard._smooth(F, x_estimate.T,P_positive, x_priori.T,P_negative)
-
-#def _smooth(transition_matrices, filtered_state_means,
-#            filtered_state_covariances, predicted_state_means,
-#            predicted_state_covariances)
-#    
-    #measurement update
-    
-    #print(x_priori)
+[x_filtered_pkal, P_filtered_pkal] = constantVelocityModel.filter(z)
     
 plot.figure(1)
 plot.subplot(1,2,1)

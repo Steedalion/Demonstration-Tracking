@@ -75,6 +75,7 @@ plot.title("Position")
 plot.plot(z[0,:],z[1,:],'r.'
           ,x_true[0,:],x_true[2,:],'k.'
           ,x_estimate[0,:],x_estimate[2,:],'b')
+plot.legend(["measurements",'true','filter'])
 plot.subplot(1,2,2)
 plot.title("Velocity")
 plot.plot(t,x_true[3,:],'r',t,x_estimate[3,:],'b')

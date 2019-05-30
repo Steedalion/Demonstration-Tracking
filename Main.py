@@ -86,6 +86,8 @@ print("Filter entered")
 import numpy as np;
 import matplotlib.pyplot as plot;
 import kalman as kf; 
+import pykalman as pk;
+
     
 
 T = 1/30;   
@@ -106,24 +108,25 @@ x_true = np.zeros([4,tmax]);
 nx = np.size(x_true,0);
 x_estimate = np.zeros(np.shape(x_true));   
 x_estimate[:,0] = np.array([z[0][0],1,z[1][0],0])   
-pk = np.zeros((tmax,nx,nx));
-pk[0] = np.eye(np.size(x_true,0));
+P_filtered = np.zeros((tmax,nx,nx));
+P_filtered[0] = np.eye(np.size(x_true,0));
 R = 0.002;
 sigmav =np.diag([1,1])*0.01;
 sigmaW =np.diag([1,1])*10;
 R = sigmav**2;
 Q = sigmaW**2;
 t = np.linspace(0,tmax*T,tmax)
+
 for i in range(1,tmax):   
     #time update
-    [x_priori, P_pred, K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],pk[i-1])
-    #K = pk.dot(H.T)/((H.dot(pk).dot(H.T) + R))
+    [x_priori, P_pred, K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],P_filtered[i-1])
+    #K = P_filtered.dot(H.T)/((H.dot(P_filtered).dot(H.T) + R))
     #measurement update
-    [x_estimate[:,i], pk[i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
+    [x_estimate[:,i], P_filtered[i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
     
 
     
-[x_backpass, P_backpass] = kf.backPass(F,Gamma,Q,pk,x_filt=x_estimate)
+[x_backpass, P_backpass] = kf.backPass(F,Gamma,Q,P_filtered,x_filt=x_estimate)
 
 plot.figure(1)
 plot.subplot(1,2,1)

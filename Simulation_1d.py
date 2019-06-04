@@ -9,8 +9,9 @@ import numpy as np
 import kalman as kf;
 import matplotlib.pyplot as plot;
 import pykalman as pk;
+import filterpy.kalman as kfilter;
 
-T = 2;
+T = 4;
 t_final = 100*T;
 n_dimentions = 2;             
 F = np.block([               
@@ -59,6 +60,14 @@ Constant_acceleration_filter = pk.KalmanFilter(transition_matrices=F2,
                                                observation_covariance=R, 
                                                initial_state_covariance= np.diag([100**2, 20**2, 2**2]),
                                                initial_state_mean= [1, 0, 0])
+constant_v = kfilter.KalmanFilter(dim_x=2, dim_z=1);
+constant_v.F = F;
+constant_v.x = xp[:,0];
+constant_v.H = H;
+constant_v.Q = Gamma.dot(Q).dot(Gamma.T);
+constant_v.P = Pp;
+constant_v.R = R;
+x_filtepy_cv = np.zeros(x_true.shape)
 for i in range(0,t_final-1):
     ## True dynamics
     x_true[:,i+1] = F.dot(x_true[:,i]) +Gamma.dot(np.random.normal(0,sigma_w))  # system dynamics    
@@ -68,6 +77,9 @@ for i in range(0,t_final-1):
     [xp[:,i+1], Pp] = kf.measurementUpdate(P_,K,x_,H,y[i])
     Pp = np.dot((np.eye(np.size(K.dot(H),0))- K.dot(H)), (P_))
     xp[:,i+1] = x_ + K.dot(y[i] - H.dot(x_))
+    constant_v.predict();
+    constant_v.update(y[i]);
+    x_filtepy_cv[:,i+1] =constant_v.x_post
     
 x_filtered = Constant_velocity.filter(y)[0]
 x_smoothed = Constant_velocity.smooth(y)[0]
@@ -126,5 +138,20 @@ plot.title("Velocity CV vs CA")
 plot.plot(x_true[1,:],'r',
           x_smoothed[:,1],'b',
           xa_smooth[:,1],'k',
+          )
+plot.legend(["v_true",'v_filter','v_ca'])
+plot.figure(5)
+plot.subplot(1,3,1)
+plot.title("Position CA")
+plot.plot(y,'r.',
+          x_filtepy_cv[0,:],'b',
+          x_filtered[:,0],'k',)
+plot.legend(["measurements",'position estimate'])
+
+plot.figure(6)
+plot.title("Velocity CV vs CA")
+plot.plot(x_true[1,:],'r',
+          x_filtepy_cv[1,:],'b',
+          x_filtered[:,1],'k',
           )
 plot.legend(["v_true",'v_filter','v_ca'])

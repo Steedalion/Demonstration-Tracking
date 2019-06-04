@@ -86,7 +86,7 @@ print("Filter entered")
 import numpy as np;
 import matplotlib.pyplot as plot;
 import kalman as kf; 
-import pykalman as pk;
+import pykalman as pkal;
 
     
 
@@ -95,7 +95,8 @@ F = np.array([[1, T],[0, 1]]);np.zeros(np.shape(F));
 F = np.block([
         [F, np.zeros(np.shape(F))],
         [np.zeros(np.shape(F)),F]
-        ]);    
+        ]);
+
 Gamma = np.array([[pow(T,2)/2],[T]]);
 Gamma = np.block([
         [Gamma, np.zeros(np.shape(Gamma))],
@@ -117,6 +118,37 @@ R = sigmav**2;
 Q = sigmaW**2;
 t = np.linspace(0,tmax*T,tmax)
 
+constant_velocity = pkal.KalmanFilter(transition_matrices=F,
+                                      observation_matrices=H,
+                                      transition_covariance=Gamma.dot(Q).dot(Gamma.T),
+                                      observation_covariance=R,
+                                      initial_state_mean=x_estimate[:,0],
+                                      initial_state_covariance=P_filtered[0])
+F2 = np.block([
+        [1, T, T**2],
+        [0, 1, T],
+        [0, 0, 1]
+        ]);
+F2 = np.block([
+        [F2, np.zeros(np.shape(F2))],
+        [np.zeros(np.shape(F2)),F2]
+        ]);
+Gamma2  = np.array([[T**3/6], [T**2/2], [T]]);
+Gamma2 = np.block([
+        [Gamma2, np.zeros(np.shape(Gamma2))],
+        [np.zeros(np.shape(Gamma2)), Gamma2]
+        ]);    
+H2 = np.array([[1,0,0,0,0,0],[0,0,0,1,0,0]]);
+sigmaW2 =np.diag([1,1,1])*10;
+Q2 = sigmaW2**2;
+constant_acceleration = pkal.KalmanFilter(transition_matrices=F2,
+                                          observation_matrices=H2,
+                                          transition_covariance=Gamma2.dot(Q).dot(Gamma2.T),
+                                          observation_covariance=R,
+                                          initial_state_mean=np.zeros([6]),
+                                          initial_state_covariance=np.diag([1,1,1,1,1,1])
+                                          )
+
 for i in range(1,tmax):   
     #time update
     [x_priori, P_pred, K] = kf.timeUpdate(F,H,R,Q,Gamma,x_estimate[:,i-1],P_filtered[i-1])
@@ -125,7 +157,8 @@ for i in range(1,tmax):
     [x_estimate[:,i], P_filtered[i]] = kf.measurementUpdate(P_pred,K,x_priori,H,z[:,i])
     
 
-    
+x_cv = constant_velocity.filter(z.T)[0]    
+x_ca = constant_acceleration.filter(z.T)[0]    
 [x_backpass, P_backpass] = kf.backPass(F,Gamma,Q,P_filtered,x_filt=x_estimate)
 
 plot.figure(1)
@@ -133,7 +166,7 @@ plot.subplot(1,2,1)
 plot.title("Position")
 plot.plot(z[0,:],z[1,:],'r.'
           ,x_estimate[0,:],x_estimate[2,:],'b')
-plot.axis([0,300,0,200])
+#plot.axis([0,300,0,200])
 plot.legend(["measurements",'position estimate'])
 
 plot.subplot(1,2,2)
@@ -154,6 +187,25 @@ plot.title("Velocity")
 plot.plot(t,x_backpass[1,:],'b',
           t,x_backpass[3,:],'r')
 plot.legend(["v_x",'v_y'])
+
+plot.figure(3)
+plot.subplot(1,2,1)
+plot.title("Position pykal")
+plot.plot(z[0,:],z[1,:],'r.'
+          ,x_cv[:,0],x_cv[:,2],'b',
+          x_ca[:,0], x_ca[:,3])
+plot.legend(["measurements",'position estimate_cv','position ca'])
+
+plot.subplot(1,2,2)
+plot.title("Velocity pykal")
+plot.plot(t,x_cv[:,1],'b',
+          t,x_cv[:,3],'r',
+          t,x_ca[:,1],
+          t,x_ca[:,4])
+plot.legend(["v_x",'v_y'])
+plot.plot(t,x_cv[:,1],'b',
+          t,x_cv[:,3],'r')
+plot.legend(["v_x",'v_y','vx_ca','vy_ca'])
     
 points_kf = tuple(map(tuple,np.vstack([x_estimate[0].T,x_estimate[2]]).T.astype(int)))
 points_bp = tuple(map(tuple,np.vstack([x_backpass[0].T,x_backpass[2]]).T.astype(int)))

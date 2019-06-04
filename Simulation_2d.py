@@ -79,7 +79,7 @@ plot.legend(["measurements",'true','filter'])
 plot.subplot(1,2,2)
 plot.title("Velocity")
 plot.plot(t,x_true[3,:],'r',t,x_estimate[3,:],'b')
-plot.legend(["measurements",'filter'])
+plot.legend(["true",'filter'])
 
 plot.figure(2)
 plot.subplot(1,2,1)

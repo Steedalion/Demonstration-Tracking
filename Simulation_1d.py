@@ -39,7 +39,8 @@ Pp = np.block([              # guess of initial error covariance
     [100**2, 0],
     [0, 20**2]
     ]);
-sigma_Pp = np.zeros([t_final,n_dimentions,n_dimentions])
+sigma_Pp = np.zeros([t_final,n_dimentions,n_dimentions]);
+P_post = np.zeros([t_final,n_dimentions,n_dimentions]);
 sigma_Pp[1] = np.sqrt(np.diag(Pp));
 ## Noise
 sigma_w = np.array([2]);        # system noise (std of acceleration) 
@@ -47,27 +48,33 @@ sigma_v = 30;       # measurement noise (std of position sensor)
 Q = np.diag(np.power(sigma_w,2));      # system noise covariance matrix
 R = np.power(sigma_v,2);      # measurement noise covariance matrix
 
-Constant_velocity  = pk.KalmanFilter(transition_matrices= F,
-                                     observation_matrices= H,
-                                     transition_covariance= Gamma.dot(Q).dot(Gamma.T),
-                                     observation_covariance= R,
-                                     initial_state_covariance= Pp,
-                                     initial_state_mean= xp[:,0]
-                                     )
+
 Constant_acceleration_filter = pk.KalmanFilter(transition_matrices=F2,
                                                observation_matrices= np.array([1, 0, 0]),
                                                transition_covariance= Gamma2.dot(Q).dot(Gamma2.T),
                                                observation_covariance=R, 
                                                initial_state_covariance= np.diag([100**2, 20**2, 2**2]),
                                                initial_state_mean= [1, 0, 0])
-constant_v = kfilter.KalmanFilter(dim_x=2, dim_z=1);
-constant_v.F = F;
-constant_v.x = xp[:,0];
-constant_v.H = H;
-constant_v.Q = Gamma.dot(Q).dot(Gamma.T);
-constant_v.P = Pp;
-constant_v.R = R;
-x_filtepy_cv = np.zeros(x_true.shape)
+constant_velocity = kfilter.KalmanFilter(dim_x=2, dim_z=1);
+constant_velocity.F = F;
+constant_velocity.x = x_true[:,0]
+constant_velocity.H = H;
+constant_velocity.Q = Gamma.dot(Q).dot(Gamma.T);
+constant_velocity.P = Pp;
+constant_velocity.R = R;
+
+constant_acceleration = kfilter.KalmanFilter(dim_x=3, dim_z=1);
+constant_acceleration.F = F2;
+constant_acceleration.H = np.atleast_2d([1, 0, 0]);
+constant_acceleration.Q = Gamma2.dot(Q).dot(Gamma2.T);
+constant_acceleration.R = R;
+constant_acceleration.x = np.array([1, 0, 0]);
+constant_acceleration.P = np.diag([100**2, 20**2, 2**2]);
+
+filters = [constant_velocity, constant_acceleration]
+mu = [0.5, 0.5]  # each filter is equally likely at the start
+trans = np.array([[0.97, 0.03], [0.03, 0.97]])
+imm = kfilter.IMMEstimator(filters, mu, trans)
 for i in range(0,t_final-1):
     ## True dynamics
     x_true[:,i+1] = F.dot(x_true[:,i]) +Gamma.dot(np.random.normal(0,sigma_w))  # system dynamics    
@@ -77,22 +84,19 @@ for i in range(0,t_final-1):
     [xp[:,i+1], Pp] = kf.measurementUpdate(P_,K,x_,H,y[i])
     Pp = np.dot((np.eye(np.size(K.dot(H),0))- K.dot(H)), (P_))
     xp[:,i+1] = x_ + K.dot(y[i] - H.dot(x_))
-    constant_v.predict();
-    constant_v.update(y[i]);
-    x_filtepy_cv[:,i+1] =constant_v.x_post
-    
-x_filtered = Constant_velocity.filter(y)[0]
-x_smoothed = Constant_velocity.smooth(y)[0]
 
-xa_filtered = Constant_acceleration_filter.filter(y)[0]
-xa_smooth = Constant_acceleration_filter.smooth(y)[0]
+[x_cv_filtered,P_t,_,_] = constant_velocity.batch_filter(y)    
+[x_cv_smoothed,_,_,_] = constant_velocity.rts_smoother(x_cv_filtered, P_t)
+
+[x_ca_filtered,P_a,_,_] = constant_acceleration.batch_filter(y);
+[xa_smooth,_,_,_] = constant_acceleration.rts_smoother(x_ca_filtered, P_a);
 #    
 plot.figure(1)
 plot.subplot(1,2,1)
 plot.title("Position")
 plot.plot(y,'r.'
           ,xp[0,:],'b')
-plot.legend(["measurements",'position estimate'])
+plot.legend(["measurements",'filtered position estimate'])
 
 plot.subplot(1,2,2)
 plot.title("Velocity")
@@ -103,55 +107,40 @@ plot.figure(2)
 plot.subplot(1,2,1)
 plot.title("Position")
 plot.plot(y,'r.'
-          ,x_filtered[:,0],'b')
+          ,x_cv_filtered[:,0],'b')
 plot.legend(["measurements",'position estimate'])
 
 plot.subplot(1,2,2)
 plot.title("Velocity")
-plot.plot(x_true[1,:],'r',x_filtered[:,1],'b')
+plot.plot(x_true[1,:],'r',x_cv_filtered[:,1],'b')
 plot.legend(["v_true",'v_filter'])
 
 plot.figure(3)
 plot.subplot(1,3,1)
 plot.title("Position CA")
 plot.plot(y,'r.',
-          xa_filtered[:,0],'b',
+          x_ca_filtered[:,0],'b',
           xa_smooth[:,0],'k',)
 plot.legend(["measurements",'position estimate'])
 
 plot.subplot(1,3,2)
 plot.title("Velocity CA")
 plot.plot(x_true[1,:],'r',
-          xa_filtered[:,1],'b',
+          x_ca_filtered[:,1],'b',
           xa_smooth[:,1],'k',
           )
 plot.legend(["v_true",'v_filter'])
 
 plot.subplot(1,3,3)
 plot.title("Acceleration")
-plot.plot(xa_filtered[:,2],'b',
+plot.plot(x_ca_filtered[:,2],'b',
           xa_smooth[:,2],'k',)
 plot.legend(["v_true",'v_filter'])
 
 plot.figure(4)
 plot.title("Velocity CV vs CA")
 plot.plot(x_true[1,:],'r',
-          x_smoothed[:,1],'b',
+          x_cv_smoothed[:,1],'b',
           xa_smooth[:,1],'k',
-          )
-plot.legend(["v_true",'v_filter','v_ca'])
-plot.figure(5)
-plot.subplot(1,3,1)
-plot.title("Position CA")
-plot.plot(y,'r.',
-          x_filtepy_cv[0,:],'b',
-          x_filtered[:,0],'k',)
-plot.legend(["measurements",'position estimate'])
-
-plot.figure(6)
-plot.title("Velocity CV vs CA")
-plot.plot(x_true[1,:],'r',
-          x_filtepy_cv[1,:],'b',
-          x_filtered[:,1],'k',
           )
 plot.legend(["v_true",'v_filter','v_ca'])
